@@ -25,11 +25,6 @@
  ***************************************************************************/
 PRIVATE int extrae_json(hgobj gobj);
 PRIVATE int cmd_connect(hgobj gobj);
-PRIVATE int display_webix_result(
-    hgobj gobj,
-    const char *command,
-    json_t *webix
-);
 
 
 /***************************************************************************
@@ -38,12 +33,15 @@ PRIVATE int display_webix_result(
 
 
 PRIVATE sdata_desc_t commands_desc[] = {
-/*-ATTR-type------------name----------------flag------------------------default---------description---------- */
-SDATA (ASN_OCTET_STR,   "command",          0,                          0,              "command"),
-SDATA (ASN_OCTET_STR,   "date",             0,                          0,              "date of command"),
-SDATA (ASN_JSON,        "kw",               0,                          0,              "kw"),
-SDATA (ASN_BOOLEAN,     "ignore_fail",      0,                          0,              "continue tests although fail"),
-SDATA (ASN_JSON,        "response_filter",  0,                          0,              "Keys to validate the response"),
+/*-ATTR-type------------name----------------flag----default-----description---------- */
+SDATA (ASN_OCTET_STR,   "command",          0,      0,          "command"),
+SDATA (ASN_OCTET_STR,   "date",             0,      0,          "date of command"),
+SDATA (ASN_JSON,        "kw",               0,      0,          "kw"),
+SDATA (ASN_JSON,        "response",         0,      0,          "Keys to validate the response"),
+SDATA (ASN_JSON,        "filter",           0,      0,          "Filter response"),
+SDATA (ASN_BOOLEAN,     "ignore_fail",      0,      0,          "continue tests although fail"),
+SDATA (ASN_BOOLEAN,     "without_metadata", 0,      0,          ""),
+SDATA (ASN_BOOLEAN,     "without_private",  0,      0,          ""),
 
 SDATA_END()
 };
@@ -193,138 +191,6 @@ PRIVATE int mt_stop(hgobj gobj)
 
 
 
-
-/***************************************************************************
- *
- ***************************************************************************/
-PRIVATE GBUFFER *jsontable2str(json_t *jn_schema, json_t *jn_data)
-{
-    GBUFFER *gbuf = gbuf_create(4*1024, gbmem_get_maximum_block(), 0, 0);
-
-    size_t col;
-    json_t *jn_col;
-    /*
-     *  Paint Headers
-     */
-    json_array_foreach(jn_schema, col, jn_col) {
-        const char *header = kw_get_str(jn_col, "header", "", 0);
-        int fillspace = kw_get_int(jn_col, "fillspace", 10, 0);
-        if(fillspace > 0) {
-            gbuf_printf(gbuf, "%-*.*s ", fillspace, fillspace, header);
-        }
-    }
-    gbuf_printf(gbuf, "\n");
-
-    /*
-     *  Paint ===
-     */
-    json_array_foreach(jn_schema, col, jn_col) {
-        int fillspace = kw_get_int(jn_col, "fillspace", 10, 0);
-        if(fillspace > 0) {
-            gbuf_printf(gbuf,
-                "%*.*s ",
-                fillspace,
-                fillspace,
-                "==========================================================================="
-            );
-        }
-    }
-    gbuf_printf(gbuf, "\n");
-
-    /*
-     *  Paint data
-     */
-    size_t row;
-    json_t *jn_row;
-    json_array_foreach(jn_data, row, jn_row) {
-        json_array_foreach(jn_schema, col, jn_col) {
-            const char *id = kw_get_str(jn_col, "id", 0, 0);
-            int fillspace = kw_get_int(jn_col, "fillspace", 10, 0);
-            if(fillspace > 0) {
-                json_t *jn_cell = kw_get_dict_value(jn_row, id, 0, 0);
-                char *text = json2uglystr(jn_cell);
-                if(json_is_number(jn_cell) || json_is_boolean(jn_cell)) {
-                    //gbuf_printf(gbuf, "%*s ", fillspace, text);
-                    gbuf_printf(gbuf, "%-*.*s ", fillspace, fillspace, text);
-                } else {
-                    gbuf_printf(gbuf, "%-*.*s ", fillspace, fillspace, text);
-                }
-                GBMEM_FREE(text);
-            }
-        }
-        gbuf_printf(gbuf, "\n");
-    }
-    gbuf_printf(gbuf, "\nTotal: %d\n", row);
-
-    return gbuf;
-}
-
-/***************************************************************************
- *  Print json response in display list window
- ***************************************************************************/
-PRIVATE int display_webix_result(
-    hgobj gobj,
-    const char *command,
-    json_t *webix)
-{
-    PRIVATE_DATA *priv = gobj_priv_data(gobj);
-    int result = kw_get_int(webix, "result", -1, 0);
-    json_t *jn_schema = kw_get_dict_value(webix, "schema", 0, 0);
-    json_t *jn_data = kw_get_dict_value(webix, "data", 0, 0);
-
-    const char *display_mode = gobj_read_str_attr(gobj, "display_mode");
-    json_t *jn_display_mode = kw_get_subdict_value(webix, "__md_iev__", "display_mode", 0, 0);
-    if(jn_display_mode) {
-        display_mode = json_string_value(jn_display_mode);
-    }
-
-    BOOL mode_form = FALSE;
-    if(!empty_string(display_mode)) {
-        if(strcasecmp(display_mode, "form")==0)  {
-            mode_form = TRUE;
-        }
-    }
-
-    if(json_is_array(jn_data) && json_array_size(jn_data)>0) {
-        if (mode_form) {
-            char *data = json2str(jn_data);
-            if(priv->verbose >=2)  {
-                printf("%s\n", data);
-            }
-            gbmem_free(data);
-        } else {
-            /*
-            *  display as table
-            */
-            if(jn_schema && json_array_size(jn_schema)) {
-                GBUFFER *gbuf = jsontable2str(jn_schema, jn_data);
-                if(gbuf) {
-                    if(priv->verbose >=2)  {
-                        printf("%s\n", (char *)gbuf_cur_rd_pointer(gbuf));
-                    }
-                    gbuf_decref(gbuf);
-                }
-            } else {
-                char *text = json2str(jn_data);
-                if(text) {
-                    if(priv->verbose >=2)  {
-                        printf("%s\n", text);
-                    }
-                    gbmem_free(text);
-                }
-            }
-        }
-    } else if(json_is_object(jn_data)) {
-        char *data = json2str(jn_data);
-        if(priv->verbose >=2)  {
-            printf("%s\n", data);
-        }
-        gbmem_free(data);
-    }
-
-    JSON_DECREF(webix);
-    return result;
-}
 
 /***************************************************************************
  *
@@ -661,9 +527,10 @@ PRIVATE int tira_dela_cola(hgobj gobj)
         execute_command(gobj);
     } else {
         if(priv->verbose) {
-            printf("\n==> All done!\n\n");
+            printf("\n==> All done!\n");
+        } else {
+            printf("\n");
         }
-        gobj_set_exit_code(0);
         gobj_shutdown();
     }
 
@@ -747,57 +614,91 @@ PRIVATE int ac_mt_command_answer(hgobj gobj, const char *event, json_t *kw, hgob
 {
     PRIVATE_DATA *priv = gobj_priv_data(gobj);
 
-    const char *command = sdata_read_str(priv->hs, "command");
-    json_t *jn_response_filter = sdata_read_json(priv->hs, "response_filter");
-
-    if(jn_response_filter) {
-        json_t *jn_data = WEBIX_DATA(kw);
-        json_t *jn_tocmp = jn_data;
-        if(json_is_array(jn_data)) {
-            jn_tocmp = json_array_get(jn_data, 0);
-        }
-        JSON_INCREF(jn_response_filter);
-        if(!kw_match_simple(jn_tocmp, jn_response_filter)) {
-            if(priv->verbose > 1) {
-                char *text = json2str(jn_tocmp);
-                if(text) {
-                    printf("NOT MATCH: %s\n", text);
-                    gbmem_free(text);
-                }
-            }
-            KW_DECREF(kw);
-            return 0;
-        }
-    }
-
-    int result = kw_get_int(kw, "result", -1, 0);
-    const char *comment = kw_get_str(kw, "comment", "", 0);
+    //const char *command = sdata_read_str(priv->hs, "command");
+    json_t *jn_response = sdata_read_json(priv->hs, "response");
+    json_t *jn_filter = sdata_read_json(priv->hs, "filter");
     BOOL ignore_fail = sdata_read_bool(priv->hs, "ignore_fail");
-    if(!ignore_fail && result < 0) {
-        /*
-         *  Comando con error y sin ignorar error, aborta
-         */
-        printf("%s: %s\n", "ERROR", comment);
+    BOOL without_metadata = sdata_read_bool(priv->hs, "without_metadata");
+    BOOL without_private = sdata_read_bool(priv->hs, "without_private");
 
-        gobj_set_exit_code(-1);
-        gobj_shutdown();
+    if(jn_filter) {
+        json_t *new_kw = kw_clone_by_keys(json_incref(kw), json_incref(jn_filter), TRUE);
         KW_DECREF(kw);
-        return -1;
+        kw = new_kw;
     }
 
-    if(priv->verbose) {
-        printf("<-- %s: %s\n", (result<0)?"ERROR":"Ok", comment);
-    }
+    if(jn_response) {
+        BOOL match = kwid_compare_records(
+            kw,             // record
+            jn_response,    // expected
+            without_metadata,
+            without_private,
+            (priv->verbose > 1)?1:0
+        );
+        if(!match) {
+            gobj_set_exit_code(-1);
+            if(priv->verbose) {
+                printf("%s  --> ERROR: %s %s\n", On_Red BWhite, "response not match", Color_Off);
+                if(priv->verbose > 1) {
+                    print_json2("received", kw);
+                    print_json2("expected", jn_response);
+                }
+            } else {
+                printf("%sX%s", On_Red BWhite,Color_Off);
+            }
+            if(!ignore_fail) {
+                KW_DECREF(kw);
+                printf("\n");
+                gobj_shutdown();
+                return -1;
+            }
 
-    display_webix_result(
-        gobj,
-        command,
-        kw  // owned
-    );
+        } else {
+            if(priv->verbose) {
+                printf("  --> OK\n");
+                if(priv->verbose > 1) {
+                    print_json2("received", kw);
+                }
+            } else {
+                printf(".");
+            }
+        }
+    } else {
+        int result = kw_get_int(kw, "result", -1, 0);
+        const char *comment = kw_get_str(kw, "comment", "", 0);
+
+        if(result<0) {
+            gobj_set_exit_code(-1);
+            if(priv->verbose) {
+                printf("%s  --> ERROR: %s %s\n", On_Red BWhite, comment, Color_Off);
+                if(priv->verbose > 1) {
+                    print_json2("received", kw);
+                }
+            } else {
+                printf("%sX%s", On_Red BWhite,Color_Off);
+            }
+            if(!ignore_fail) {
+                KW_DECREF(kw);
+                printf("\n");
+                gobj_shutdown();
+                return -1;
+            }
+        } else {
+            if(priv->verbose) {
+                printf("  --> OK\n");
+                if(priv->verbose > 1) {
+                    print_json2("received", kw);
+                }
+            } else {
+                printf(".");
+            }
+        }
+    }
 
     clear_timeout(priv->timer);
     tira_dela_cola(gobj);
 
+    KW_DECREF(kw);
     return 0;
 }
 

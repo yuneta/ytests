@@ -77,7 +77,7 @@ PRIVATE char variable_config[]= "\
     },                                                              \n\
     'environment': {                                                \n\
         'use_system_memory': true,                                  \n\
-        'log_gbmem_info': false,                                    \n\
+        'log_gbmem_info': true,                                     \n\
         'MEM_MIN_BLOCK': 512,                                       \n\
         'MEM_MAX_BLOCK': 52428800,              #^^  50*M           \n\
         'MEM_SUPERBLOCK': 52428800,             #^^  50*M           \n\
