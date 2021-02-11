@@ -1,0 +1,5 @@
+{"command": "command-yuno id=1911 service=treedb_authzs command=create-node topic_name=users record='{\"id\":\"carlos4@mulesol.es\"}'"}
+
+{"command": "command-yuno id=1911 service=treedb_authzs command=delete-node topic_name=users record='{\"id\":\"carlos4@mulesol.es\"}'"}
+
+
