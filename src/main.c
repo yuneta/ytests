@@ -94,7 +94,7 @@ PRIVATE char variable_config[]= "\
             },                                                      \n\
             'to_file': {                                            \n\
                 'handler_type': 'file',                             \n\
-                'filename_mask': 'ytests-MM-DD.log',                \n\
+                'filename_mask': 'ytests-W.log',                \n\
                 'handler_options': 255                              \n\
             }                                                       \n\
         }                                                           \n\
