@@ -143,7 +143,7 @@ static struct argp_option options[] = {
 /*-name-------------key-----arg---------flags---doc-----------------group */
 {0,                 0,      0,          0,      "Connection keys", 2},
 {"url",             'u',    "URL",      0,      "Url to connect. Default: 'ws://127.0.0.1:1991'.", 2},
-{"yuno_role",       'O',    "ROLE",     0,      "Remote yuno role. Default: ''", 2},
+{"yuno_role",       'O',    "ROLE",     0,      "Remote yuno role. Default: 'yuneta_agent'", 2},
 {"yuno_name",       'o',    "NAME",     0,      "Remote yuno name. Default: ''", 2},
 {"service",         'S',    "SERVICE",  0,      "Remote yuno service. Default: '__default_service__'", 2},
 {0,                 0,      0,          0,      "Local keys", 3},
