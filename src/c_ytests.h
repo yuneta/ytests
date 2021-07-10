@@ -7,8 +7,7 @@
  *          Copyright (c) 2016 Niyamaka.
  *          All Rights Reserved.
  ****************************************************************************/
-#ifndef _C_YTESTS_H
-#define _C_YTESTS_H 1
+#pragma once
 
 #include <yuneta.h>
 
@@ -50,6 +49,4 @@ PUBLIC GCLASS *gclass_ytests(void);
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif
