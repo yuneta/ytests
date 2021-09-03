@@ -28,6 +28,7 @@ struct arguments
     int print_role;
     int repeat;                 /* repeat time, in seconds (0 remove subscription) */
     char *url;
+    char *realm_name;
     char *yuno_role;
     char *yuno_name;
     char *yuno_service;
@@ -56,7 +57,7 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state);
 #define APP_NAME        "ytests"
 #define APP_DOC         "Yuneta Tests"
 
-#define APP_VERSION     "4.15.8"
+#define APP_VERSION     "4.15.9"
 #define APP_DATETIME    __DATE__ " " __TIME__
 #define APP_SUPPORT     "<niyamaka at yuneta.io>"
 
@@ -152,9 +153,10 @@ static struct argp_option options[] = {
 
 {0,                 0,      0,          0,      "Connection keys", 30},
 {"url",             'u',    "URL",      0,      "Url to connect. Default: 'ws://127.0.0.1:1991'.", 30},
-{"yuno_role",       'O',    "ROLE",     0,      "Remote yuno role. Default: 'yuneta_agent'", 30},
+{"realm_name",      'Z',    "REALM",    0,      "Remote realm name (used for Authorized Party, 'azp' field of jwt). ", 30},
+{"yuno_role",       'O',    "ROLE",     0,      "Remote yuno role. Default: ''", 30},
 {"yuno_name",       'o',    "NAME",     0,      "Remote yuno name. Default: ''", 30},
-{"service",         'S',    "SERVICE",  0,      "Remote yuno service. Default: '__default_service__'", 30},
+{"yuno_service",    'S',    "SERVICE",  0,      "Remote yuno service. Default: '__default_service__'", 30},
 
 {0,                 0,      0,          0,      "Local keys", 40},
 {"repeat",          't',    "TIMES",    0,      "Repeat execution 'repeat' times. Set -1 to infinite loop. Default: 1", 1},
@@ -210,6 +212,9 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state)
         arguments->url = arg;
         break;
 
+    case 'Z':
+        arguments->realm_name = arg;
+        break;
     case 'O':
         arguments->yuno_role = arg;
         break;
@@ -300,6 +305,7 @@ int main(int argc, char *argv[])
     memset(&arguments, 0, sizeof(arguments));
     arguments.repeat = 1;
     arguments.url = "ws://127.0.0.1:1991";
+    arguments.realm_name = "";
     arguments.yuno_role = "yuneta_agent";
     arguments.yuno_name = "";
     arguments.yuno_service = "__default_service__";
@@ -347,7 +353,8 @@ int main(int argc, char *argv[])
         snprintf(param2, l, "--config-file=%s", arguments.config_json_file);
         argvs[idx++] = param2;
     } else {
-        json_t *kw_utility = json_pack("{s:{s:i, s:i, s:s, s:s, s:s, s:s, s:s, s:s, s:s, s:s}}",
+        json_t *kw_utility = json_pack(
+            "{s:{s:i, s:i, s:s, s:s, s:s, s:s, s:s, s:s, s:s, s:s, s:s, s:s}}",
             "global",
             "YTests.repeat", arguments.repeat,
             "YTests.verbose", arguments.verbose,
@@ -357,6 +364,7 @@ int main(int argc, char *argv[])
             "YTests.user_passw", arguments.user_passw,
             "YTests.jwt", arguments.jwt,
             "YTests.url", arguments.url,
+            "YTests.realm_name", arguments.realm_name,
             "YTests.yuno_role", arguments.yuno_role,
             "YTests.yuno_name", arguments.yuno_name,
             "YTests.yuno_service", arguments.yuno_service
