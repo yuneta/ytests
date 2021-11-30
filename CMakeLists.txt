@@ -74,6 +74,7 @@ TARGET_LINK_LIBRARIES(ytests
     lzma        # used by libunwind
     z rt m
     uuid
+    util
 )
 
 ##############################################
