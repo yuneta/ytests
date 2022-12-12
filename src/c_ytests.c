@@ -329,7 +329,7 @@ PRIVATE char agent_insecure_config[]= "\
 {                                               \n\
     'name': '(^^__url__^^)',                    \n\
     'gclass': 'IEvent_cli',                     \n\
-    'as_unique': true,                          \n\
+    'as_service': true,                          \n\
     'kw': {                                     \n\
         'remote_yuno_name': '(^^__yuno_name__^^)',      \n\
         'remote_yuno_role': '(^^__yuno_role__^^)',      \n\
@@ -375,7 +375,7 @@ PRIVATE char agent_secure_config[]= "\
 {                                               \n\
     'name': '(^^__url__^^)',                    \n\
     'gclass': 'IEvent_cli',                     \n\
-    'as_unique': true,                          \n\
+    'as_service': true,                          \n\
     'kw': {                                     \n\
         'jwt': '(^^__jwt__^^)',                         \n\
         'remote_yuno_name': '(^^__yuno_name__^^)',      \n\
